@@ -24,7 +24,7 @@ final ordersProvider = FutureProvider<List<dynamic>>((ref) async {
   final siteUrl = await storage.read(key: 'site_url');
   
   final response = await dioClient.dio.get('$siteUrl/wp-json/liba/v1/orders');
-  return response.data; // List of orders
+  return response.data; 
 });
 
 // 4. Ürünler
