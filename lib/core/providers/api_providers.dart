@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../network/dio_client.dart';
+import '../network/dio_client.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 // 1. Ağ İstemcisi
