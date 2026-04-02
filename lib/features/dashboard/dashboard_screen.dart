@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../core/providers/api_providers.dart';
 import '../orders/orders_screen.dart';
 import '../products/products_screen.dart';
 import '../appointments/appointments_screen.dart';
@@ -46,11 +48,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-class _DashboardHome extends StatelessWidget {
+class _DashboardHome extends ConsumerWidget {
   const _DashboardHome();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dashboardAsyncValue = ref.watch(dashboardProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Özet', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -62,43 +66,52 @@ class _DashboardHome extends StatelessWidget {
           const SizedBox(width: 8),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildSummaryCard(
-            context: context,
-            title: 'Bugünkü Satışlar',
-            value: '₺12,450.00',
-            subtitle: '+%15 düne göre',
-            icon: Icons.attach_money,
-            color: const Color(0xFF10B981),
-          ).animate().slideY(begin: 0.2, duration: 400.ms).fadeIn(),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildSummaryCard(
-                  context: context,
-                  title: 'Bekleyen Sipariş',
-                  value: '14',
-                  subtitle: 'Paketlenecek',
-                  icon: Icons.shopping_bag_outlined,
-                  color: const Color(0xFFF59E0B),
-                ).animate().slideY(begin: 0.2, delay: 100.ms, duration: 400.ms).fadeIn(),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildSummaryCard(
-                  context: context,
-                  title: 'Yeni İstekler',
-                  value: '5',
-                  subtitle: 'Görüşülecek',
-                  icon: Icons.calendar_month_outlined,
-                  color: const Color(0xFF3B82F6),
-                ).animate().slideY(begin: 0.2, delay: 200.ms, duration: 400.ms).fadeIn(),
-              ),
-            ],
-          ),
+      body: dashboardAsyncValue.when(
+        data: (data) => _buildContent(context, data),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(child: Text('Bir hata oluştu: $error')),
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, Map<String, dynamic> data) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _buildSummaryCard(
+          context: context,
+          title: 'Bugünkü Satışlar',
+          value: data['today_sales']?.toString() ?? '₺0.00',
+          subtitle: 'Performans artıyor',
+          icon: Icons.attach_money,
+          color: const Color(0xFF10B981),
+        ).animate().slideY(begin: 0.2, duration: 400.ms).fadeIn(),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryCard(
+                context: context,
+                title: 'Bekleyen Sipariş',
+                value: data['pending_orders']?.toString() ?? '0',
+                subtitle: 'Paketlenecek',
+                icon: Icons.shopping_bag_outlined,
+                color: const Color(0xFFF59E0B),
+              ).animate().slideY(begin: 0.2, delay: 100.ms, duration: 400.ms).fadeIn(),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildSummaryCard(
+                context: context,
+                title: 'Yeni İstekler',
+                value: data['new_requests']?.toString() ?? '0',
+                subtitle: 'Görüşülecek',
+                icon: Icons.calendar_month_outlined,
+                color: const Color(0xFF3B82F6),
+              ).animate().slideY(begin: 0.2, delay: 200.ms, duration: 400.ms).fadeIn(),
+            ),
+          ],
+        ),
           const SizedBox(height: 32),
           Text(
             'Hızlı İşlemler',

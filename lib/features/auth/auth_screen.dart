@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/ui/glass_container.dart';
 import '../dashboard/dashboard_screen.dart';
 
@@ -18,15 +20,42 @@ class _AuthScreenState extends State<AuthScreen> {
 
   void _login() async {
     setState(() => _isLoading = true);
-    // TODO: Implement JWT login with Riverpod and Dio
-    await Future.delayed(const Duration(seconds: 1)); // Mock delay
-    if (!mounted) return;
-    setState(() => _isLoading = false);
     
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const DashboardScreen()),
-    );
+    try {
+      final dio = Dio();
+      var siteUrl = _urlController.text.trim();
+      
+      // Eğik çizgiyi kaldır
+      if (siteUrl.endsWith('/')) {
+        siteUrl = siteUrl.substring(0, siteUrl.length - 1);
+      }
+
+      final response = await dio.post(
+        '$siteUrl/wp-json/liba/v1/auth/token',
+        data: {
+          'username': _usernameController.text,
+          'password': _passwordController.text,
+        },
+      );
+      
+      final token = response.data['token'];
+      const storage = FlutterSecureStorage();
+      await storage.write(key: 'jwt_token', value: token);
+      await storage.write(key: 'site_url', value: siteUrl);
+      
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const DashboardScreen()),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Giriş başarısız. Bilgileri veya URL\'yi kontrol edin.')),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
